@@ -10,9 +10,6 @@ use crate::{AxisInfo, Event, EventType, PlatformError, PowerInfo};
 use uuid::Uuid;
 
 use std::collections::VecDeque;
-#[cfg(not(feature = "wasm-bindgen"))]
-use stdweb::web::{Gamepad as WebGamepad, GamepadMappingType};
-#[cfg(feature = "wasm-bindgen")]
 use web_sys::{Gamepad as WebGamepad, GamepadButton, GamepadMappingType};
 
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -41,16 +38,11 @@ impl Gilrs {
             return self.event_cache.pop_front();
         }
 
-        #[cfg(not(feature = "wasm-bindgen"))]
-        let gamepads = WebGamepad::get_all().into_iter();
-
-        #[cfg(feature = "wasm-bindgen")]
         let gamepads = web_sys::window()
             .expect("no window")
             .navigator()
             .get_gamepads()
             .expect("error getting gamepads");
-        #[cfg(feature = "wasm-bindgen")]
         let gamepads = gamepads.iter().map(|val| {
             if val.is_null() {
                 None
@@ -178,28 +170,12 @@ impl Gamepad {
         let name = gamepad.id();
 
         let buttons = gamepad.buttons();
-        let button_iter = {
-            #[cfg(feature = "wasm-bindgen")]
-            {
-                buttons.iter().map(GamepadButton::from)
-            }
-            #[cfg(not(feature = "wasm-bindgen"))]
-            {
-                buttons.into_iter()
-            }
-        };
+        let button_iter = buttons.iter().map(GamepadButton::from);
 
         let axes = gamepad.axes();
         let axis_iter = {
-            #[cfg(feature = "wasm-bindgen")]
-            {
-                axes.iter()
-                    .map(|val| val.as_f64().expect("axes() should be an array of f64"))
-            }
-            #[cfg(not(feature = "wasm-bindgen"))]
-            {
-                axes.into_iter()
-            }
+            axes.iter()
+                .map(|val| val.as_f64().expect("axes() should be an array of f64"))
         };
 
         let mapping = match gamepad.mapping() {
